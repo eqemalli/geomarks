@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "enxhi_77859_the_word_GeoNotes_graphic_design_logo_blue_purple_y_da48fb4b-8c83-4311-baca-609dc50ab0e7-removebg-preview.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "enxhi_77859_the_word_GeoNotes_graphic_design_logo_blue_purple_y_da48fb4b-8c83-4311-baca-609dc50ab0e7-removebg-preview 1.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "enxhi_77859_the_word_GeoNotes_graphic_design_logo_blue_purple_y_da48fb4b-8c83-4311-baca-609dc50ab0e7-removebg-preview 2.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
