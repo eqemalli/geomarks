@@ -32,7 +32,7 @@ class NewNoteViewController: UIViewController, UIScrollViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupScrollView()
+        //setupScrollView()
         setupContentView()
         setupMapView()
         setupTitleTextField()
@@ -47,7 +47,9 @@ class NewNoteViewController: UIViewController, UIScrollViewDelegate {
                     titleTextField.text = memo.title
                     contentTextField.text = memo.content
                     setMapViewLocation(latitude: memo.latitude, longitude: memo.longitude)
-                }
+        }else{
+            setMapViewRegion()
+        }
     }
     
     func setMapViewLocation(latitude: Double, longitude: Double) {
@@ -64,6 +66,15 @@ class NewNoteViewController: UIViewController, UIScrollViewDelegate {
            mapView.addAnnotation(annotation)
             pinAnnotation = annotation
         
+    }
+    
+    func setMapViewRegion(){
+        let notes = NoteData.shared.loadNotes()
+        if !notes.isEmpty, let note = notes.last{
+            let coordinates = CLLocationCoordinate2D(latitude: note.latitude, longitude: note.longitude)
+               let region = MKCoordinateRegion(center: coordinates, latitudinalMeters: 1000, longitudinalMeters: 1000)
+               mapView.setRegion(region, animated: true)
+        }
     }
     
     func setupScrollView() {
@@ -84,14 +95,13 @@ class NewNoteViewController: UIViewController, UIScrollViewDelegate {
 
     func setupContentView(){
         contentView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(contentView)
+        view.addSubview(contentView)
         
         NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(equalTo: scrollView.safeAreaLayoutGuide.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: scrollView.safeAreaLayoutGuide.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.safeAreaLayoutGuide.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.safeAreaLayoutGuide.bottomAnchor),
-            contentView.heightAnchor.constraint(equalToConstant: 5000)
+            contentView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
     }
     func setupMapView() {
@@ -135,6 +145,7 @@ class NewNoteViewController: UIViewController, UIScrollViewDelegate {
             contentTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             contentTextField.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
+        contentTextField.font = UIFont.systemFont(ofSize: 16)
     }
     
     func setupNavigationBar() {
@@ -148,6 +159,11 @@ class NewNoteViewController: UIViewController, UIScrollViewDelegate {
     
     @objc func saveButtonTapped() {
         guard let title = titleTextField.text, let content = contentTextField.text, let annotation = pinAnnotation else {
+            let alertController = UIAlertController(title: "Location Required", message: "Please select a location on the map to save the new note.", preferredStyle: .alert)
+            let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+            alertController.addAction(okAction)
+            present(alertController, animated: true, completion: nil)
+            
             return
         }
         if mode == .edit, var editedMemo = memo {

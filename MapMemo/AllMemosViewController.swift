@@ -21,7 +21,7 @@ class AllMemosViewController: UIViewController, MKMapViewDelegate {
         
         
         let customButton = UIButton(type: .custom)
-        customButton.setTitle("GeoNotes", for: .normal)
+        customButton.setTitle("GeoMarks", for: .normal)
         customButton.setTitleColor(.darkText, for: .normal)
         let buttonSize = CGSize(width: 40, height: 40) // Adjust the size as needed
         customButton.frame = CGRect(origin: .zero, size: buttonSize)
@@ -118,6 +118,12 @@ class AllMemosViewController: UIViewController, MKMapViewDelegate {
             annotation.subtitle = note.content
             mapView.addAnnotation(annotation)
         }
+        if !notes.isEmpty, let note = notes.last{
+            let coordinates = CLLocationCoordinate2D(latitude: note.latitude, longitude: note.longitude)
+               let region = MKCoordinateRegion(center: coordinates, latitudinalMeters: 1000, longitudinalMeters: 1000)
+               mapView.setRegion(region, animated: true)
+        }
+        
     }
     
     func refreshAnnotations(){

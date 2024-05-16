@@ -8,7 +8,7 @@
 import UIKit
 import Combine
 
-class MemoListViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class MemoListViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UIDocumentInteractionControllerDelegate {
     var tableView: UITableView!
     var memos: [Note] = []
     var filteredMemos: [Note] = []
@@ -19,11 +19,11 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
     var isSearchActive: Bool {
         return searchController.isActive && !searchBarIsEmpty
     }
-
+    
     var searchBarIsEmpty: Bool {
         return searchController.searchBar.text?.isEmpty ?? true
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTableView()
@@ -39,11 +39,11 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
         navigationItem.titleView = customButton
         
         searchController = UISearchController(searchResultsController: nil)
-           searchController.searchResultsUpdater = self
-           searchController.obscuresBackgroundDuringPresentation = false
-           searchController.searchBar.placeholder = "Search Notes"
-           navigationItem.searchController = searchController
-           definesPresentationContext = true
+        searchController.searchResultsUpdater = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search Notes"
+        navigationItem.searchController = searchController
+        definesPresentationContext = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -54,7 +54,7 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
     private func setupNavigationBar() {
         let saveImage = UIImage(systemName: "square.and.arrow.down")
         let saveButton = UIBarButtonItem(image: saveImage, style: .plain, target: self, action: #selector(saveButtonTapped))
-            navigationItem.rightBarButtonItem = saveButton
+        navigationItem.rightBarButtonItem = saveButton
         navigationItem.rightBarButtonItem = saveButton
     }
     
@@ -69,6 +69,8 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
         
     }
     
+    private var documentInteractionController: UIDocumentInteractionController?
+    
     private func saveMemosToFile() {
         let csvFileName = "Memos.csv"
         guard let documentDirectoryPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
@@ -77,23 +79,42 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
         }
         
         let csvFilePath = documentDirectoryPath.appendingPathComponent(csvFileName)
-        var csvText = "Title,Date,Description,Latitude,Longitude\n" // CSV header
+        var csvText = "Nr,Date,Title,Description,Latitude,Longitude\n" // CSV header
         
         // Add memo data to the CSV text
-        for memo in memos {
+        for (index, memo) in memos.enumerated() {
             let escapedTitle = escapeCSVField(memo.title)
             let escapedDescription = escapeCSVField(memo.content)
-            let memoLine = "\(escapedTitle),\(memo.date),\(escapedDescription),\(memo.latitude),\(memo.longitude)\n"
+            let memoLine = "\(index + 1),\(memo.date),\(escapedTitle),\(escapedDescription),\(memo.latitude),\(memo.longitude)\n"
             csvText.append(memoLine)
         }
         
         do {
             try csvText.write(to: csvFilePath, atomically: true, encoding: .utf8)
             print("CSV file saved: \(csvFilePath)")
-            // Optionally, you can provide a way for the user to access the saved file, such as displaying a share sheet.
+            
+            // Show an alert to the user indicating successful save
+            let alertController = UIAlertController(title: "Success", message: "CSV file saved successfully.", preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+
+            alertController.addAction(UIAlertAction(title: "Open", style: .default, handler: { [weak self] _ in
+                self?.showFileInDownloads(csvFilePath)
+            }))
+            present(alertController, animated: true, completion: nil)
         } catch {
             print("Error saving CSV file: \(error.localizedDescription)")
         }
+    }
+    private func showFileInDownloads(_ fileURL: URL) {
+        documentInteractionController = UIDocumentInteractionController(url: fileURL)
+        documentInteractionController?.delegate = self
+        documentInteractionController?.presentPreview(animated: true)
+    }
+    
+    // MARK: - UIDocumentInteractionControllerDelegate
+    
+    func documentInteractionControllerViewControllerForPreview(_ controller: UIDocumentInteractionController) -> UIViewController {
+        return self
     }
     
     
@@ -133,7 +154,7 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return isSearchActive ? filteredMemos.count : memos.count
-
+        
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -142,21 +163,21 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
             return UITableViewCell()
         }
         cell.configure(with: memo)
-                  
-
-              cell.deleteSubject
-                  .prefix(1)
-                  .sink { [weak self] in
-                      self?.deleteButtonTapped(id: memo.id)
-                  }
-                  .store(in: &cell.cancellables)
+        
+        
+        cell.deleteSubject
+            .prefix(1)
+            .sink { [weak self] in
+                self?.deleteButtonTapped(id: memo.id)
+            }
+            .store(in: &cell.cancellables)
         
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-            let selectedMemo = memos[indexPath.row]
-            let newNoteVC = NewNoteViewController(memo: selectedMemo, mode: .edit)
+        let selectedMemo = memos[indexPath.row]
+        let newNoteVC = NewNoteViewController(memo: selectedMemo, mode: .edit)
         newNoteVC.dismissPublisher
             .sink { [weak self] in
                 self?.reloadMemos()
@@ -164,14 +185,14 @@ class MemoListViewController: UIViewController, UITableViewDelegate, UITableView
             .store(in: &cancellables)
         let navController = UINavigationController(rootViewController: newNoteVC)
         present(navController, animated: true, completion: nil)
-        }
+    }
     
     func didTapDeleteButton(id: String) {
         //var localMemos = NoteData.shared.loadNotes()
         //let memo = localMemos[indexPath.row]
         NoteData.shared.deleteNote(noteId: id)
         //memos.remove(at: indexPath.row)
-       // self.memos = localMemos
+        // self.memos = localMemos
         reloadMemos()
     }
 }
@@ -184,7 +205,7 @@ extension MemoListViewController: UISearchResultsUpdating {
         } else {
             filteredMemos = memos.filter { memo in
                 return memo.title.lowercased().contains(searchText.lowercased()) ||
-                       memo.content.lowercased().contains(searchText.lowercased())
+                memo.content.lowercased().contains(searchText.lowercased())
             }
         }
         tableView.reloadData()
